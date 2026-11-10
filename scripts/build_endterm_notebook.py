@@ -390,7 +390,7 @@ plt.tight_layout(); plt.savefig(FIG_DIR / "pca" / "pca_clusters.png", dpi=160); 
 """),
 md("""## 9. Artificial neural network (appropriate deep learning for tabular data)
 
-The dataset is tabular, so a feedforward ANN is the relevant deep-learning component; CNNs, NLP models, and unrelated datasets would not be methodologically appropriate. The ANN reuses the training-only fitted preprocessing. It has Dense layers of 128, 64, and 32 ReLU units, 0.2 dropout after the first two layers, a linear output, Adam optimization, MSE loss, and EarlyStopping. Validation data guides early stopping; test data is never used during ANN training.
+The dataset is tabular, so a feedforward ANN is the relevant deep-learning component; CNNs, NLP models, and unrelated datasets would not be methodologically appropriate. The ANN reuses the training-only fitted input preprocessing. Its log-price target is separately standardized using the training partition only, then predictions are inverse-transformed before reporting the common metrics. It has Dense layers of 128, 64, and 32 ReLU units, 0.2 dropout after the first two layers, a linear output, Adam optimization, MSE loss, and EarlyStopping. Validation data guides early stopping; test data is never used during ANN training.
 """),
 code("""if importlib.util.find_spec("tensorflow") is None:
     raise ImportError("TensorFlow is required for the ANN. Install the project requirements in a Python version supported by TensorFlow, then restart the kernel.")
@@ -403,6 +403,9 @@ ann_preprocessor = make_preprocessor().fit(X_train, y_train)
 X_train_ann = ann_preprocessor.transform(X_train).astype("float32")
 X_val_ann = ann_preprocessor.transform(X_val).astype("float32")
 X_test_ann = ann_preprocessor.transform(X_test).astype("float32")
+ann_target_scaler = StandardScaler().fit(y_train.to_numpy().reshape(-1, 1))
+y_train_ann = ann_target_scaler.transform(y_train.to_numpy().reshape(-1, 1)).ravel().astype("float32")
+y_val_ann = ann_target_scaler.transform(y_val.to_numpy().reshape(-1, 1)).ravel().astype("float32")
 
 ann = keras.Sequential([
     keras.layers.Input(shape=(X_train_ann.shape[1],)),
@@ -411,11 +414,12 @@ ann = keras.Sequential([
     keras.layers.Dense(32, activation="relu"), keras.layers.Dense(1, activation="linear")])
 ann.compile(optimizer=keras.optimizers.Adam(learning_rate=.001), loss="mse", metrics=["mae"])
 callbacks = [keras.callbacks.EarlyStopping(monitor="val_loss", patience=20, restore_best_weights=True), keras.callbacks.ReduceLROnPlateau(monitor="val_loss", patience=8, factor=.5, min_lr=1e-5)]
-history = ann.fit(X_train_ann, y_train, validation_data=(X_val_ann, y_val), epochs=250, batch_size=32, verbose=0, callbacks=callbacks)
+history = ann.fit(X_train_ann, y_train_ann, validation_data=(X_val_ann, y_val_ann), epochs=250, batch_size=32, verbose=0, callbacks=callbacks)
 print(f"ANN stopped after {len(history.history['loss'])} epochs; best validation loss: {min(history.history['val_loss']):.5f}")
 plt.figure(figsize=(8, 4)); plt.plot(history.history["loss"], label="training loss"); plt.plot(history.history["val_loss"], label="validation loss")
 plt.title("ANN training history"); plt.xlabel("Epoch"); plt.ylabel("MSE loss (log-price)"); plt.legend(); plt.tight_layout(); plt.savefig(FIG_DIR / "ann" / "training_history.png", dpi=160); plt.show()
-ann_val_metrics = evaluate(y_val, ann.predict(X_val_ann, verbose=0).ravel())
+ann_val_pred = ann_target_scaler.inverse_transform(ann.predict(X_val_ann, verbose=0)).ravel()
+ann_val_metrics = evaluate(y_val, ann_val_pred)
 display(pd.Series(ann_val_metrics, name="ANN validation").round(3))
 """),
 md("""## 10. Unified model comparison and final test evaluation
@@ -439,11 +443,14 @@ if selected_name == "Artificial Neural Network":
     X_fit = pd.concat([X_train, X_val]); y_fit = pd.concat([y_train, y_val])
     selected_preprocessor = make_preprocessor().fit(X_fit, y_fit)
     X_fit_ann = selected_preprocessor.transform(X_fit).astype("float32")
+    selected_target_scaler = StandardScaler().fit(y_fit.to_numpy().reshape(-1, 1))
+    y_fit_ann = selected_target_scaler.transform(y_fit.to_numpy().reshape(-1, 1)).ravel().astype("float32")
     # Internal validation split replaces the external validation set after selection.
-    x_subtrain, x_internal, y_subtrain, y_internal = train_test_split(X_fit_ann, y_fit, test_size=.12, random_state=RANDOM_STATE)
+    x_subtrain, x_internal, y_subtrain, y_internal = train_test_split(X_fit_ann, y_fit_ann, test_size=.12, random_state=RANDOM_STATE)
     selected_model = keras.models.clone_model(ann); selected_model.compile(optimizer=keras.optimizers.Adam(.001), loss="mse", metrics=["mae"])
     selected_model.fit(x_subtrain, y_subtrain, validation_data=(x_internal, y_internal), epochs=len(history.history["loss"]), batch_size=32, verbose=0, callbacks=[keras.callbacks.EarlyStopping(monitor="val_loss", patience=20, restore_best_weights=True)])
-    test_pred = selected_model.predict(X_test_ann if False else selected_preprocessor.transform(X_test).astype("float32"), verbose=0).ravel()
+    test_pred_scaled = selected_model.predict(selected_preprocessor.transform(X_test).astype("float32"), verbose=0)
+    test_pred = selected_target_scaler.inverse_transform(test_pred_scaled).ravel()
 else:
     selected_model = traditional_models[selected_name].fit(pd.concat([X_train, X_val]), pd.concat([y_train, y_val]))
     test_pred = selected_model.predict(X_test)

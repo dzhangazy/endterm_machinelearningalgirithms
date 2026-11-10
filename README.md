@@ -70,14 +70,27 @@ Boosting was selected on validation RMSE(log) and achieved held-out test
 RMSE(log) **0.1672**, MAE(log) **0.1254**, R² **0.8924**, MAE **6.10M KZT**,
 and MedAPE **9.18%**. The validation MedAPE was 9.42%, compared with 33.93% for
 the median baseline. The ANN was evaluated on the same validation split but did
-not improve on Gradient Boosting (RMSE(log) 1.1019 versus 0.1624). Historical
+not improve on Gradient Boosting (RMSE(log) 0.1708 versus 0.1624). Historical
 midterm metrics remain in the original notebook and are not substituted for
 endterm results.
+
+| Validation model | RMSE (log) | R² | MAE (KZT) | MedAPE |
+| --- | ---: | ---: | ---: | ---: |
+| Gradient Boosting | 0.162 | 0.893 | 5.80M | 9.42% |
+| Random Forest | 0.170 | 0.884 | 6.01M | 9.78% |
+| Artificial Neural Network | 0.171 | 0.882 | 6.23M | 9.70% |
+| Linear Regression | 0.209 | 0.823 | 7.68M | 11.93% |
+| Decision Tree (tuned) | 0.219 | 0.806 | 8.34M | 13.33% |
+| KNN (tuned) | 0.240 | 0.766 | 8.32M | 13.11% |
+| Median baseline | 0.500 | -0.013 | 17.92M | 33.93% |
+
+K-Means selected **k = 5** with silhouette **0.277**. PCA retained **33.8%**
+of variance in two components, and required **9** and **11** components for
+about 90% and 95% variance, respectively. The ANN uses training-only scaling
+for both processed inputs and the log-price target, then inverse-transforms
+predictions before common metric calculation. It is competitive with Random
+Forest but does not justify replacing Gradient Boosting.
 
 ## Limitations and ethics
 
 Listing prices are not verified transactions. Advertisements can be duplicated, inaccurate, incomplete, and time-specific; premium homes can depend on unrecorded renovation, view or building details. Accuracy can vary by district and price segment. Feature importance is association, not causation, and outputs must not be treated as official appraisals.
-
-## Defense
-
-[reports/defense_questions.md](reports/defense_questions.md) contains 35 student-level questions and result-specific prompts for the recorded data run.

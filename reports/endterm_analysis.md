@@ -30,10 +30,11 @@ was cluster 2 (median asking price 78.0M KZT; mean area 118.0 m²). PCA retained
 33.8% of numerical-feature variance in its first two components; 9 and 11
 components retained 90% and 95%, respectively.
 
-The ANN used the same validation partition and did not improve the result:
-it stopped after 33 epochs, with validation RMSE(log) **1.1019** and MedAPE
-**64.44%**. This is an observed outcome, not a reason to change splits or
-selectively remove the model.
+The ANN used the same validation partition and did not improve the selected
+model: after training-only standardization of the log-price target, it achieved
+validation RMSE(log) **0.1708** and MedAPE **9.70%**, versus Gradient
+Boosting's 0.1624 and 9.42%. The ANN is therefore a meaningful, fair deep
+learning comparison, but its added complexity was not justified here.
 
 Runtime versions: pandas 3.1.1, NumPy 2.5.4, scikit-learn 1.9.1,
 Matplotlib 3.11.2, seaborn 0.13.2, joblib 1.6.0 and TensorFlow 2.22.0-rc0.
