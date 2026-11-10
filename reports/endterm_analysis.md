@@ -19,15 +19,24 @@ After a successful clean run it writes:
 
 ## Results from clean notebook execution
 
-The notebook was executed from a clean kernel with the supplied Kaggle CSV on
-2026-11-10. Gradient Boosting had the best validation log-RMSE (0.1618) and
+The notebook was executed from a clean Python 3.14.10 kernel with the supplied
+CSV on 2026-11-11. Gradient Boosting had the best validation log-RMSE (0.1624) and
 was therefore selected before the test set was touched. Its final held-out test
-results were: RMSE(log) **0.1674**, MAE(log) **0.1252**, R2 **0.8921**, MAE
-**6,107,228 KZT**, and MedAPE **9.27%**.
+results were: RMSE(log) **0.1672**, MAE(log) **0.1254**, R2 **0.8924**, MAE
+**6,097,216 KZT**, and MedAPE **9.18%**. The validation MedAPE was **9.42%**.
+
+K-Means selected **k = 5** with silhouette **0.277**. The highest-price group
+was cluster 2 (median asking price 78.0M KZT; mean area 118.0 m²). PCA retained
+33.8% of numerical-feature variance in its first two components; 9 and 11
+components retained 90% and 95%, respectively.
 
 The ANN used the same validation partition and did not improve the result:
-its validation RMSE(log) was 1.0203 and MedAPE was 61.90%. This is an observed
-outcome, not a reason to change splits or selectively remove the model.
+it stopped after 33 epochs, with validation RMSE(log) **1.1019** and MedAPE
+**64.44%**. This is an observed outcome, not a reason to change splits or
+selectively remove the model.
+
+Runtime versions: pandas 3.1.1, NumPy 2.5.4, scikit-learn 1.9.1,
+Matplotlib 3.11.2, seaborn 0.13.2, joblib 1.6.0 and TensorFlow 2.22.0-rc0.
 
 The authoritative machine-readable records are
 `model_comparison_validation.csv` and `final_test_metrics.csv` in this folder.

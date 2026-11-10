@@ -51,7 +51,10 @@ endterm run; do not quote the historical midterm figures as endterm results.
 
 ## Actual result flash cards
 
-- The selected model is **Gradient Boosting**, chosen by validation RMSE(log) = **0.1618**.
-- Its final test RMSE(log) is **0.1674**, R2 is **0.8921**, MAE is **6.11M KZT**, and MedAPE is **9.27%**.
-- The median baseline validation MedAPE is **33.93%**; the selected model's validation MedAPE is **9.40%**.
-- The ANN did not win: validation RMSE(log) **1.0203** and MedAPE **61.90%**. Explain that neural networks are not automatically best for moderate-sized tabular data.
+- The selected model is **Gradient Boosting**, chosen by validation RMSE(log) = **0.1624**.
+- Its final test RMSE(log) is **0.1672**, R² is **0.8924**, MAE is **6.10M KZT**, and MedAPE is **9.18%**.
+- The median baseline validation MedAPE is **33.93%**; the selected model's validation MedAPE is **9.42%**.
+- The ANN did not win: validation RMSE(log) **1.1019** and MedAPE **64.44%**. Explain that neural networks are not automatically best for moderate-sized tabular data.
+- K-Means selected **5 clusters** with silhouette **0.277**; the large-apartment cluster had median price about **78.0M KZT** and mean area about **118 m²**.
+- PCA's first two components explain **33.8%** of numerical-feature variance; **9** and **11** components retain 90% and 95%.
+- The run used Python **3.14.10** and TensorFlow **2.22.0-rc0**.

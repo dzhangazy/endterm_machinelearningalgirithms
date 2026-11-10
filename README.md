@@ -13,8 +13,8 @@ It extends the preserved midterm work. Asking-price predictions are decision sup
 
 | Member | Technical responsibility |
 | --- | --- |
-| Nurkhan Kuanyshov | Dataset preparation, EDA, cleaning, feature engineering, notebook structure, documentation, clustering, and PCA. |
-| Bakytzhan Jangazy | Supervised evaluation, cross-validation/tuning, ANN, error analysis, comparison, and presentation preparation. |
+| Nurkhan Kuanyshov | Dataset preparation, EDA, cleaning, feature engineering, leakage-safe split/preprocessing, midterm baselines and KNN/tree tuning, and K-Means. |
+| Bakytzhan Jangazy | Random Forest and Gradient Boosting tuning, PCA, ANN, final evaluation, error analysis, comparison, README, and presentation preparation. |
 
 These are identifiable project sections, not claims about commits or finished results.
 
@@ -51,7 +51,7 @@ data/README.md
 
 ## Installation and execution
 
-The recorded run used Python 3.14.7 and TensorFlow 2.22.0-rc0. `requirements.txt` currently specifies minimum versions, not a full lockfile, so fresh installs may resolve differently. The notebook prints the runtime versions of Python, pandas, scikit-learn, NumPy, Matplotlib, seaborn, joblib and TensorFlow.
+The successful run used Python 3.14.10, pandas 3.1.1, NumPy 2.5.4, scikit-learn 1.9.1, Matplotlib 3.11.2, seaborn 0.13.2, joblib 1.6.0 and TensorFlow 2.22.0-rc0. `requirements.txt` specifies minimum versions rather than a full lockfile, so fresh installs may resolve differently.
 
 ```bash
 python3.12 -m venv .venv
@@ -65,14 +65,14 @@ A successful verification executes the notebook top-to-bottom, downloading the p
 
 ## Results
 
-The endterm notebook was run from a clean kernel on the supplied Kaggle CSV. Gradient
-Boosting was selected on validation RMSE(log) and achieved the following final
-held-out test results: **RMSE(log) 0.1674**, **MAE(log) 0.1252**, **R2 0.8921**,
-**MAE 6.11M KZT**, and **MedAPE 9.27%**. It improves considerably over the
-median baseline's validation MedAPE of 33.93%. The ANN was evaluated fairly but
-did not improve the traditional models (validation RMSE(log) 1.0203 versus
-0.1618 for Gradient Boosting). Historical midterm metrics remain available in
-the original notebook and are not substituted for endterm evidence.
+The endterm notebook completed successfully on the supplied CSV. Gradient
+Boosting was selected on validation RMSE(log) and achieved held-out test
+RMSE(log) **0.1672**, MAE(log) **0.1254**, R² **0.8924**, MAE **6.10M KZT**,
+and MedAPE **9.18%**. The validation MedAPE was 9.42%, compared with 33.93% for
+the median baseline. The ANN was evaluated on the same validation split but did
+not improve on Gradient Boosting (RMSE(log) 1.1019 versus 0.1624). Historical
+midterm metrics remain in the original notebook and are not substituted for
+endterm results.
 
 ## Limitations and ethics
 
