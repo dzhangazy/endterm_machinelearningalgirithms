@@ -31,7 +31,7 @@ Astana apartment asking prices vary with size, layout, location, floor, building
 
 This is a regression task. The original target remains `price`; models learn `log1p(price)` because prices are right-skewed. Success is assessed using log-scale RMSE, MAE and R², plus KZT MAE and median absolute percentage error (MedAPE) on the original price scale. The test partition is reserved for one final evaluation only.
 
-This endterm notebook extends—not replaces—the preserved midterm notebook. All metrics and charts below are computed when the official CSV is available; no historical midterm metric is copied into the results.
+This endterm notebook extends—not replaces—the preserved midterm notebook. All metrics and charts below are computed from the supplied Kaggle CSV; no historical midterm metric is copied into the results.
 """),
 code("""import importlib.util
 import platform
@@ -40,6 +40,7 @@ import warnings
 from pathlib import Path
 
 import joblib
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -69,7 +70,8 @@ pd.set_option("display.max_columns", 100)
 ROOT = Path.cwd()
 if not (ROOT / "data").exists() and (ROOT.parent / "data").exists():
     ROOT = ROOT.parent
-DATA_PATH = ROOT / "astana_real_estate_dataset.csv"
+DATA_FILENAME = "astana_real_estate_dataset.csv"
+DATASET_HANDLE = "turarr/astana-real-estate-dataset"
 TARGET = "price"
 RANDOM_STATE = 42
 CURRENT_YEAR = 2026
@@ -80,16 +82,42 @@ for folder in ["eda", "clustering", "pca", "ann", "evaluation"]:
 (ROOT / "reports").mkdir(exist_ok=True)
 
 print(f"Python: {platform.python_version()} | pandas: {pd.__version__} | scikit-learn: {sklearn.__version__}")
-print("Dataset path:", DATA_PATH)
-if not DATA_PATH.exists():
-    raise FileNotFoundError(
-        "Official dataset missing. Download Astana Real Estate Dataset by turarr from Kaggle "
-        "and place astana_real_estate_dataset.csv in the repository root. No substitute data is used."
-    )
+print(f"NumPy: {np.__version__} | Matplotlib: {matplotlib.__version__} | seaborn: {sns.__version__} | joblib: {joblib.__version__}")
+local_data = ROOT / DATA_FILENAME
+kaggle_input = Path("/kaggle/input")
+attached_files = list(kaggle_input.rglob(DATA_FILENAME)) if kaggle_input.exists() else []
+if local_data.exists():
+    DATA_PATH = local_data
+    DATA_SOURCE = "local project copy"
+elif attached_files:
+    DATA_PATH = attached_files[0]
+    DATA_SOURCE = "Kaggle notebook input"
+else:
+    try:
+        import kagglehub
+    except ImportError as exc:
+        raise ImportError(
+            "Dataset is not attached or stored locally. Install project dependencies "
+            "(including kagglehub), then rerun this cell with internet access."
+        ) from exc
+    downloaded_dir = Path(kagglehub.dataset_download(DATASET_HANDLE))
+    downloaded_files = list(downloaded_dir.rglob("*.csv"))
+    exact_matches = [path for path in downloaded_files if path.name.lower() == DATA_FILENAME.lower()]
+    if exact_matches:
+        DATA_PATH = exact_matches[0]
+    elif len(downloaded_files) == 1:
+        DATA_PATH = downloaded_files[0]
+    else:
+        raise FileNotFoundError(
+            f"Kaggle dataset {DATASET_HANDLE} downloaded, but the expected CSV was not uniquely identified. "
+            f"CSV files found: {[str(path) for path in downloaded_files]}"
+        )
+    DATA_SOURCE = f"KaggleHub ({DATASET_HANDLE})"
+print(f"Dataset source: {DATA_SOURCE} | file: {DATA_PATH}")
 """),
 md("""## 2. Dataset description
 
-The source is the **Astana Real Estate Dataset** by `turarr` on [Kaggle](https://www.kaggle.com/datasets/turarr/astana-real-estate-dataset). It consists of advertised properties scraped from Krisha.kz. The next cell reports the original row and column counts and the actual feature names directly from the downloaded CSV, rather than relying on a fixed claim.
+The source is the **Astana Real Estate Dataset** by `turarr` on [Kaggle](https://www.kaggle.com/datasets/turarr/astana-real-estate-dataset). It consists of advertised properties scraped from Krisha.kz. The notebook first looks for an attached Kaggle input or an optional local CSV; if neither exists, it downloads the public dataset through KaggleHub. The next cell reports the original row and column counts and actual feature names from the file.
 
 Important limitations: these are advertised asking prices, not verified transaction prices; listings may be duplicated; seller-entered fields can be incomplete or inaccurate; and the data represent a particular collection period rather than the full housing market.
 """),
@@ -190,7 +218,7 @@ print(f"Price range retained: {lo:,.0f}–{hi:,.0f} KZT")
 """),
 md("""## 4. Exploratory data analysis
 
-All plots have titles and axes. Their interpretation must follow the data shown when this notebook is executed; the text avoids pre-claiming statistics.
+The printed skewness values quantify the long upper price tail and how much `log1p` reduces it. The area–price scatterplot shows whether asking prices tend to rise with floor area and how wide the price spread is at comparable sizes. District medians help compare typical advertised prices without letting a few luxury listings determine the comparison. Correlations describe pairwise numeric associations, not causal effects. The missingness summary identifies which fields require imputation.
 """),
 code("""fig, axes = plt.subplots(1, 2, figsize=(13, 4))
 sns.histplot(df[TARGET], bins=45, ax=axes[0], color="steelblue")
@@ -199,7 +227,7 @@ sns.histplot(np.log1p(df[TARGET]), bins=45, ax=axes[1], color="darkorange")
 axes[1].set(title="Log-transformed asking-price distribution", xlabel="log(1 + price)", ylabel="Listings")
 plt.tight_layout(); plt.savefig(FIG_DIR / "eda" / "price_distributions.png", dpi=160); plt.show()
 print(f"Raw price skewness: {df[TARGET].skew():.2f}; log-price skewness: {np.log1p(df[TARGET]).skew():.2f}")
-print("Interpretation: compare the two skewness values and histograms; log1p is used to reduce the influence of the upper tail.")
+print("Interpretation: a smaller absolute log-price skewness indicates that log1p has compressed the long upper tail; it does not make the price distribution normal by itself.")
 
 if AREA_COL:
     plt.figure(figsize=(7, 5)); sns.scatterplot(data=df, x=AREA_COL, y=TARGET, alpha=.28)
@@ -210,10 +238,16 @@ if DISTRICT_COL and DISTRICT_COL in df:
     plt.figure(figsize=(11, 5)); sns.boxplot(data=df[df[DISTRICT_COL].isin(top)], x=DISTRICT_COL, y=TARGET)
     plt.title("Asking price by district (ten most frequent districts)"); plt.xlabel("District"); plt.ylabel("Price (KZT)"); plt.xticks(rotation=35, ha="right")
     plt.tight_layout(); plt.savefig(FIG_DIR / "eda" / "price_by_district.png", dpi=160); plt.show()
+    district_medians = df.groupby(DISTRICT_COL)[TARGET].agg(["median", "count"]).query("count >= 20").sort_values("median", ascending=False)
+    print("District interpretation: compare these medians only for districts with at least 20 retained listings; sample counts are shown to flag less reliable comparisons.")
+    display(district_medians.head(10).round(0))
+if AREA_COL:
+    area_corr = df[[AREA_COL, TARGET]].corr().iloc[0, 1]
+    print(f"Area-price Pearson correlation: {area_corr:.3f}. This is a linear association and does not account for district, quality, or other listing differences.")
 
 numeric = df.select_dtypes(include="number")
 plt.figure(figsize=(min(16, max(8, numeric.shape[1])), min(14, max(6, numeric.shape[1] * .65))))
-sns.heatmap(numeric.corr(), cmap="coolwarm", center=0, annot=numeric.shape[1] <= 14, fmt=".2f")
+sns.heatmap(numeric.corr(), cmap="coolwarm", center=0, annot=True, fmt=".2f", annot_kws={"size": 7})
 plt.title("Numeric feature correlation heatmap"); plt.tight_layout(); plt.savefig(FIG_DIR / "eda" / "correlations.png", dpi=160); plt.show()
 missing = (df.isna().mean() * 100).sort_values(ascending=False); missing = missing[missing > 0]
 if not missing.empty:
@@ -362,6 +396,7 @@ code("""if importlib.util.find_spec("tensorflow") is None:
     raise ImportError("TensorFlow is required for the ANN. Install the project requirements in a Python version supported by TensorFlow, then restart the kernel.")
 import tensorflow as tf
 from tensorflow import keras
+print(f"TensorFlow: {tf.__version__}")
 
 np.random.seed(RANDOM_STATE); tf.keras.utils.set_random_seed(RANDOM_STATE)
 ann_preprocessor = make_preprocessor().fit(X_train, y_train)
@@ -442,7 +477,7 @@ md("""## 12. Limitations and ethics
 
 **Limitations and responsible use.** Asking prices differ from negotiated transaction prices. Listing data may include duplicates, missing or inaccurate seller-entered attributes, and a time-specific market snapshot. Prediction quality can vary by district and price segment; premium homes may be harder to estimate because important details may be absent. This model is a decision-support estimate, not an official appraisal or a substitute for professional advice. Feature importance is not causality, and users should avoid treating a prediction as a fair or guaranteed price.
 
-**Reproducibility.** Fixed seeds are used throughout. Package versions print at the top. The notebook has no hidden input other than the official CSV and is designed to run top-to-bottom in a supported environment.
+**Reproducibility.** Fixed seeds are used throughout. Python and library versions print during execution. The notebook has no hidden input other than the supplied CSV and is designed to run top-to-bottom in a compatible environment.
 """),
 code(r'''best_cluster = cluster_summary["Median price (KZT)"].idxmax()
 conclusion = f"""## 13. Evidence-based final conclusions

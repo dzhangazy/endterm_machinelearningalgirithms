@@ -1,8 +1,8 @@
 # Defense questions and answers
 
 These answers describe the implemented method. For questions about the winning
-model or exact values, consult the generated validation and test tables after a
-clean notebook run; do not quote the historical midterm figures as endterm results.
+model or exact values, consult the generated validation and test tables from the
+endterm run; do not quote the historical midterm figures as endterm results.
 
 1. **What is regression?** Regression predicts a continuous numeric outcome. Here it estimates apartment price.
 2. **Why this dataset?** It directly represents the Astana listing market and includes price plus property characteristics relevant to the research question.
@@ -40,7 +40,7 @@ clean notebook run; do not quote the historical midterm figures as endterm resul
 34. **What are the main dataset limitations?** Asking rather than sale prices, potential duplicates, seller-entry errors, missing attributes, and a time-specific sample.
 35. **What is the practical value?** It provides a transparent comparison estimate for listings, with uncertainty and responsible-use limits clearly stated.
 
-## Result-specific questions to prepare after execution
+## Result-specific questions to prepare from the endterm run
 
 - Which model had the lowest validation RMSE, and what was its final test RMSE, R², MAE in KZT, and MedAPE?
 - How much did it improve on the median baseline using the same metric?

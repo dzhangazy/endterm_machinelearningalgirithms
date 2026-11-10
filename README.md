@@ -22,7 +22,7 @@ These are identifiable project sections, not claims about commits or finished re
 
 Source: [Astana Real Estate Dataset by turarr on Kaggle](https://www.kaggle.com/datasets/turarr/astana-real-estate-dataset). It contains Krisha.kz advertisements. The notebook derives actual size, columns, missingness and cleaned size from the supplied CSV; it does not hardcode them.
 
-Download the official data and place it in the repository root as `astana_real_estate_dataset.csv`. The CSV is intentionally untracked; see [DATA.md](DATA.md). No substitute or synthetic data is generated.
+The dataset downloads automatically from Kaggle when the notebook runs. A local `astana_real_estate_dataset.csv` is optional and takes priority; in Kaggle notebooks, an attached input is used first. The source is a third-party Kaggle collection of Krisha.kz advertisements, not an official government dataset. See [DATA.md](DATA.md) for details. No synthetic data is generated.
 
 ## Deliverables
 
@@ -51,21 +51,21 @@ data/README.md
 
 ## Installation and execution
 
-Use a TensorFlow-supported Python release. This implementation was validated with TensorFlow 2.22.0-rc0 on the workspace Python 3.14 host.
+The recorded run used Python 3.14.7 and TensorFlow 2.22.0-rc0. `requirements.txt` currently specifies minimum versions, not a full lockfile, so fresh installs may resolve differently. The notebook prints the runtime versions of Python, pandas, scikit-learn, NumPy, Matplotlib, seaborn, joblib and TensorFlow.
 
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
-python scripts\build_endterm_notebook.py
-jupyter execute notebooks\astana_housing_endterm.ipynb --inplace
+python scripts/build_endterm_notebook.py
+python scripts/verify_endterm_notebook.py
 ```
 
-A clean execution creates visualization PNGs, `reports/model_comparison_validation.csv`, `reports/final_test_metrics.csv`, and `models/best_model.joblib` when a scikit-learn model is selected.
+A successful verification executes the notebook top-to-bottom, downloading the public dataset if needed, and creates visualization PNGs, `reports/model_comparison_validation.csv`, `reports/final_test_metrics.csv`, and `models/best_model.joblib` when a scikit-learn model is selected. The first download outside Kaggle requires internet access; KaggleHub caches the data outside the repository.
 
 ## Results
 
-The endterm notebook was run from a clean kernel on the official CSV. Gradient
+The endterm notebook was run from a clean kernel on the supplied Kaggle CSV. Gradient
 Boosting was selected on validation RMSE(log) and achieved the following final
 held-out test results: **RMSE(log) 0.1674**, **MAE(log) 0.1252**, **R2 0.8921**,
 **MAE 6.11M KZT**, and **MedAPE 9.27%**. It improves considerably over the
@@ -80,4 +80,4 @@ Listing prices are not verified transactions. Advertisements can be duplicated, 
 
 ## Defense
 
-[reports/defense_questions.md](reports/defense_questions.md) contains 35 student-level questions and result-specific prompts to answer after the official data run.
+[reports/defense_questions.md](reports/defense_questions.md) contains 35 student-level questions and result-specific prompts for the recorded data run.

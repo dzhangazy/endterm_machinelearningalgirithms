@@ -19,7 +19,7 @@ After a successful clean run it writes:
 
 ## Results from clean notebook execution
 
-The notebook was executed from a clean kernel with the official CSV on
+The notebook was executed from a clean kernel with the supplied Kaggle CSV on
 2026-11-10. Gradient Boosting had the best validation log-RMSE (0.1618) and
 was therefore selected before the test set was touched. Its final held-out test
 results were: RMSE(log) **0.1674**, MAE(log) **0.1252**, R2 **0.8921**, MAE
